@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"meetingagent/models"
-	"meetingagent/service/utilus"
+	utils1 "meetingagent/service/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
@@ -44,7 +44,7 @@ func CreateMeeting(ctx context.Context, c *app.RequestContext) {
 	}
 
 	// 存储会议数据
-	utilus.GetMeetingStore().SetMeeting(meetingID, meeting)
+	utils1.GetMeetingStore().SetMeeting(meetingID, meeting)
 
 	// 返回会议 ID
 	response := models.PostMeetingResponse{
@@ -57,7 +57,7 @@ func CreateMeeting(ctx context.Context, c *app.RequestContext) {
 // ListMeetings handles listing all meetings
 func ListMeetings(ctx context.Context, c *app.RequestContext) {
 	// 从内存中获取所有会议
-	meetingsList := utilus.GetMeetingStore().GetAllMeetings()
+	meetingsList := utils1.GetMeetingStore().GetAllMeetings()
 
 	// 如果没有会议记录，添加一个默认样例
 	if len(meetingsList) == 0 {
@@ -122,7 +122,7 @@ func GetOneMeeting(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	meeting, err := utilus.GetMeetingStore().GetMeeting(meetingID)
+	meeting, err := utils1.GetMeetingStore().GetMeeting(meetingID)
 	if err != nil {
 		c.JSON(consts.StatusNotFound, utils.H{"error": err.Error()})
 		return
