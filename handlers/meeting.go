@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"meetingagent/service/summary"
+	"os"
+	"path/filepath"
 	"time"
 
 	"meetingagent/models"
@@ -82,23 +84,34 @@ func ListMeetings(ctx context.Context, c *app.RequestContext) {
 // GetMeetingSummary handles retrieving a meeting summary
 func GetMeetingSummary(ctx context.Context, c *app.RequestContext) {
 	meetingID := c.Query("meeting_id")
+
 	if meetingID == "" {
-		c.JSON(consts.StatusBadRequest, utils.H{"error": "meeting_id is required"})
+		c.JSON(consts.StatusBadRequest, utils.H{"error": "meeting_id参数必须提供"})
 		return
 	}
-	fmt.Printf("meetingID: %s\n", meetingID)
+	fmt.Printf("获取会议摘要，meetingID: %s\n", meetingID)
 
-	// TODO: Implement actual summary retrieval logic
-	response := map[string]interface{}{
-		"content": `
-		Meeting summary for ` + meetingID + `## Summary
-we talked about the project and the next steps, we will have a call next week to discuss the project in more detail.
+	// 构建文件路径
+	filePath := filepath.Join("data", "meetings", meetingID+".json")
 
-......
-		`,
+	// 读取文件
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("读取会议摘要文件失败: %v\n", err)
+		c.JSON(consts.StatusNotFound, utils.H{"error": fmt.Sprintf("会议摘要文件不存在: %v", err)})
+		return
 	}
 
-	c.JSON(consts.StatusOK, response)
+	// 解析JSON
+	var meeting models.SummarizedMeeting
+	if err := json.Unmarshal(data, &meeting); err != nil {
+		fmt.Printf("解析会议摘要数据失败: %v\n", err)
+		c.JSON(consts.StatusInternalServerError, utils.H{"error": fmt.Sprintf("解析会议摘要数据失败: %v", err)})
+		return
+	}
+
+	// 返回完整的摘要数据
+	c.JSON(consts.StatusOK, meeting)
 }
 
 // GetOneMeeting handles retrieving a single meeting by ID

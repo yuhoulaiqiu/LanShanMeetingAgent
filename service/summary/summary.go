@@ -71,15 +71,32 @@ func SummaryMeeting(meetingID string) {
 	}
 
 	for i, chunk := range chunks {
-		fmt.Printf("Chunk %d:\n%s\n", i+1, chunk)
+		fmt.Printf("Chunk %d:\n", i+1)
+		thisTexts := texts{
+			unsummarized_text: chunk,
+			summarized_text:   "",
+		}
+		if i == 0 {
+			output, err := App.Invoke(context.Background(), thisTexts)
+			if err != nil {
+				fmt.Println("调用模型失败:", err)
+			}
+			utilus.CreateMeetingJSON(output.Content, meetingID)
+			continue
+		}
+		thisTexts.summarized_text, err = utilus.ReadMeetingSummaryText(meetingID)
+		if err != nil {
+			fmt.Println("读取会议摘要失败:", err)
+		}
+		output, err := App.Invoke(context.Background(), thisTexts)
+		if err != nil {
+			fmt.Println("调用模型失败:", err)
+		}
+		err = utilus.UpdateMeetingSummaryText(meetingID, output.Content)
+		if err != nil {
+			fmt.Println("更新会议摘要失败:", err)
+		}
 	}
-	println(chunks[0])
-	a := context.Background()
-	output, err := App.Invoke(a, chunks[0])
-	if err != nil {
-		fmt.Println("调用模型失败:", err)
-		return
-	}
-	fmt.Println("模型输出:", output)
+
 	// 这里可以将分片存储到数据库或其他存储中
 }

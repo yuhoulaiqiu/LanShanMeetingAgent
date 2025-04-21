@@ -5,12 +5,18 @@ import (
 	"context"
 	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/schema"
 	"log"
 	"meetingagent/config"
 )
 
-var App compose.Runnable[string, string]
-var SummaryChain *compose.Chain[string, string]
+type texts struct {
+	unsummarized_text string
+	summarized_text   string
+}
+
+var App compose.Runnable[texts, *schema.Message]
+var SummaryChain *compose.Chain[texts, *schema.Message]
 
 func InitChain() {
 	ctx := context.Background()
@@ -32,7 +38,7 @@ func InitChain() {
 		SecretKey: config.Cfg.VKDB.Sk,
 
 		// 模型配置
-		Model: "deepseek-v3-250324", // 模型端点 ID
+		Model: config.Cfg.ModelInfo.ModelName, // 模型端点 ID
 
 	})
 	if err != nil {
@@ -51,14 +57,14 @@ func InitChain() {
 
 	template := NewSummaryTemplate()
 
-	store := Store()
+	//store := Store()
 	load := LoadText()
-	SummaryChain = compose.NewChain[string, string]()
+	SummaryChain = compose.NewChain[texts, *schema.Message]()
 	SummaryChain.
 		AppendLambda(load).
 		AppendChatTemplate(template).
-		AppendChatModel(chatModel).
-		AppendLambda(store)
+		AppendChatModel(chatModel)
+	//	AppendLambda(store)
 	//AppendLambda(agentLambda)
 
 	App, err = SummaryChain.Compile(ctx)
