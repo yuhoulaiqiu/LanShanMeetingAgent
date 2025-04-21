@@ -4,21 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
+	"meetingagent/service/summary"
 	"time"
 
 	"meetingagent/models"
+	"meetingagent/service/utilus"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/hertz-contrib/sse"
-)
-
-// 全局变量，用于存储会议数据
-var (
-	meetings = make(map[string]models.Meeting)
-	mu       sync.RWMutex // 读写锁，保证并发安全
 )
 
 // CreateMeeting handles the creation of a new meeting
@@ -47,28 +42,20 @@ func CreateMeeting(ctx context.Context, c *app.RequestContext) {
 	}
 
 	// 存储会议数据
-	mu.Lock()
-	meetings[meetingID] = meeting
-	mu.Unlock()
+	utilus.GetMeetingStore().SetMeeting(meetingID, meeting)
 
 	// 返回会议 ID
 	response := models.PostMeetingResponse{
 		ID: meetingID,
 	}
-
+	go summary.SummaryMeeting(meetingID)
 	c.JSON(consts.StatusOK, response)
 }
 
 // ListMeetings handles listing all meetings
 func ListMeetings(ctx context.Context, c *app.RequestContext) {
-	mu.RLock()
-	defer mu.RUnlock()
-
 	// 从内存中获取所有会议
-	meetingsList := make([]models.Meeting, 0, len(meetings))
-	for _, meeting := range meetings {
-		meetingsList = append(meetingsList, meeting)
-	}
+	meetingsList := utilus.GetMeetingStore().GetAllMeetings()
 
 	// 如果没有会议记录，添加一个默认样例
 	if len(meetingsList) == 0 {
@@ -112,6 +99,23 @@ we talked about the project and the next steps, we will have a call next week to
 	}
 
 	c.JSON(consts.StatusOK, response)
+}
+
+// GetOneMeeting handles retrieving a single meeting by ID
+func GetOneMeeting(ctx context.Context, c *app.RequestContext) {
+	meetingID := c.Query("meeting_id")
+	if meetingID == "" {
+		c.JSON(consts.StatusBadRequest, utils.H{"error": "meeting_id is required"})
+		return
+	}
+
+	meeting, err := utilus.GetMeetingStore().GetMeeting(meetingID)
+	if err != nil {
+		c.JSON(consts.StatusNotFound, utils.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(consts.StatusOK, meeting)
 }
 
 // HandleChat handles the SSE chat session
