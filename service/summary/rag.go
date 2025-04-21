@@ -46,13 +46,26 @@ func Split(meetingID string) error {
 		"doubao-embedding-large-text-240915",
 		nil,
 	))
+	if err != nil {
+		log.Println("获取或创建集合失败")
+		return err
+	}
+
+	// 删除与当前meetingID相关的所有旧文档
+	where := map[string]string{"source_meeting_id": meetingID}
+	err = collection.Delete(ctx, where, nil)
+	if err != nil {
+		log.Printf("删除旧文档时发生错误：%v\n", err)
+	}
+
 	for i, v := range res {
 		fmt.Println("片段", i+1, ":", v.Content)
 		doc1 := chromem.Document{
 			ID:      "rag" + uuid.New().String(),
 			Content: v.Content,
 			Metadata: map[string]string{
-				"source": "文档",
+				"source":            "文档",
+				"source_meeting_id": meetingID, // 添加meetingID到元数据中以便后续删除
 			},
 		}
 		err = collection.AddDocument(ctx, doc1)
@@ -60,9 +73,7 @@ func Split(meetingID string) error {
 			log.Println("添加文档失败")
 			return err
 		}
-
 	}
 	log.Println("文档加载完毕")
 	return nil
-
 }
