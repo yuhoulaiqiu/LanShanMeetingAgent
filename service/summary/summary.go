@@ -140,6 +140,10 @@ func SummaryMeeting(meetingID string) {
 		if err != nil {
 			fmt.Println("更新会议摘要失败:", err)
 		}
+		err = Split(meetingID)
+		if err != nil {
+			fmt.Println("分片失败:", err)
+		}
 	}
 }
 
