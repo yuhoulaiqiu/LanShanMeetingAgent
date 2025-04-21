@@ -29,6 +29,7 @@ func LoadConfig() {
 	// 让 viper 在可执行文件所在目录查找 config.yaml
 	viper.SetConfigName("config") // 不要加 .yaml
 	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".") // 添加当前工作目录作为配置文件路径
 	// 读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("⚠️  未找到配置文件: %v", err)
