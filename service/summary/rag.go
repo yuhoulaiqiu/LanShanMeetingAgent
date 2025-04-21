@@ -2,7 +2,6 @@ package summary
 
 import (
 	"context"
-	"fmt"
 	"github.com/cloudwego/eino-ext/components/document/transformer/splitter/markdown"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
@@ -29,6 +28,7 @@ func Split(meetingID string) error {
 		return err
 	}
 	doc, _ := utils.ReadMeetingSummaryText(meetingID)
+	doc = doc[12:] // 去掉前12个字符
 	docs := []*schema.Document{
 		{
 			ID:      meetingID,
@@ -58,8 +58,7 @@ func Split(meetingID string) error {
 		log.Printf("删除旧文档时发生错误：%v\n", err)
 	}
 
-	for i, v := range res {
-		fmt.Println("片段", i+1, ":", v.Content)
+	for _, v := range res {
 		doc1 := chromem.Document{
 			ID:      "rag" + uuid.New().String(),
 			Content: v.Content,
