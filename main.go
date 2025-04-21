@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"meetingagent/config"
 	"time"
 
 	"meetingagent/handlers"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+
+	config.LoadConfig()
 	h := server.Default()
 	h.Use(Logger())
 
