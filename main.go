@@ -5,6 +5,7 @@ import (
 	"meetingagent/config"
 	"meetingagent/dao"
 	"meetingagent/service/summary"
+	"meetingagent/service/task"
 	"time"
 
 	"meetingagent/handlers"
@@ -19,6 +20,7 @@ func main() {
 	config.LoadConfig()
 	dao.InitVkdb()
 	summary.InitChain()
+	task.InitTodoChain()
 	h := server.Default()
 	h.Use(Logger())
 

@@ -1,20 +1,37 @@
 package utilus
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"meetingagent/models"
 	"os"
 	"path/filepath"
 )
 
-// UpdateMeetingSummaryText 更新指定会议摘要的文本内容
-func UpdateMeetingSummaryText(meetingID string, newText string) error {
+// generateRandomID 生成指定长度的随机ID
+func generateRandomID(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+// AddMeetingActionItem 向指定会议的ActionItems列表中添加一个新的待办事项
+func AddMeetingActionItem(meetingID string, newItem models.ActionItem) error {
 	// 获取该会议ID的锁并加写锁
 	lock := GetFileLockManager().GetLock(meetingID)
 	lock.Lock()
 	defer lock.Unlock()
 
+	// 生成随机TodoID
+	todoID, err := generateRandomID(8)
+	if err != nil {
+		return fmt.Errorf("生成TodoID失败: %v", err)
+	}
+	newItem.TodoID = todoID
 	// 构建文件路径
 	filePath := filepath.Join("data", "meetings", meetingID+".json")
 
@@ -30,8 +47,8 @@ func UpdateMeetingSummaryText(meetingID string, newText string) error {
 		return fmt.Errorf("解析会议摘要数据失败: %v", err)
 	}
 
-	// 更新文本内容
-	meeting.Summary.Text = newText
+	// 添加���的ActionItem
+	meeting.Summary.ActionItems = append(meeting.Summary.ActionItems, newItem)
 
 	// 转换为JSON
 	jsonData, err := json.MarshalIndent(meeting, "", "  ")

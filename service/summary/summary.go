@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"meetingagent/service/task"
 	"meetingagent/service/utilus"
 )
 
@@ -42,7 +43,7 @@ func SummaryMeeting(meetingID string) {
 	var chunks []string
 	currentChunk := ""
 	currentRuneCount := 0
-	maxRuneCount := 500 // 每个分片的最大字符数
+	maxRuneCount := 600 // 每个分片的最大字符数
 
 	// 遍历会议内容构建分片
 	for _, item := range meetingData.Contents {
@@ -81,9 +82,52 @@ func SummaryMeeting(meetingID string) {
 			if err != nil {
 				fmt.Println("调用模型失败:", err)
 			}
-			utilus.CreateMeetingJSON(output.Content, meetingID)
+			err = utilus.CreateMeetingJSON(output.Content, meetingID)
+			if err != nil {
+				fmt.Println("创建会议摘要失败:", err)
+			}
+			todos, err := utilus.ReadMeetingActionItems(meetingID)
+			if err != nil {
+				fmt.Println("读取会议待办事项失败:", err)
+			}
+			m := make(map[string]any)
+			m["unsummarized_text"] = chunk
+			jsonBytes, err := json.Marshal(todos)
+			if err != nil {
+				fmt.Errorf("序列化结构体失败: %v", err)
+			}
+			todoString := string(jsonBytes)
+			m["todo_list"] = todoString
+			m["meeting_id"] = meetingID
+			go func() {
+				output, err := task.TodoApp.Invoke(context.Background(), m)
+				if err != nil {
+					fmt.Println("调用todo模型失败:", err)
+				}
+				println("todo模型返回:", output.Content)
+			}()
 			continue
 		}
+		go func() {
+			todos, err := utilus.ReadMeetingActionItems(meetingID)
+			if err != nil {
+				fmt.Println("读取会议待办事项失败:", err)
+			}
+			m := make(map[string]any)
+			m["unsummarized_text"] = chunk
+			jsonBytes, err := json.Marshal(todos)
+			if err != nil {
+				fmt.Errorf("序列化结构体失败: %v", err)
+			}
+			todoString := string(jsonBytes)
+			m["todo_list"] = todoString
+			m["meeting_id"] = meetingID
+			output, err := task.TodoApp.Invoke(context.Background(), m)
+			if err != nil {
+				fmt.Println("调用todo模型失败:", err)
+			}
+			println("todo模型返回:", output.Content)
+		}()
 		thisTexts.summarized_text, err = utilus.ReadMeetingSummaryText(meetingID)
 		if err != nil {
 			fmt.Println("读取会议摘要失败:", err)
@@ -97,6 +141,6 @@ func SummaryMeeting(meetingID string) {
 			fmt.Println("更新会议摘要失败:", err)
 		}
 	}
-
-	// 这里可以将分片存储到数据库或其他存储中
 }
+
+// 这里可以将分片存储到数据库或其他存储中

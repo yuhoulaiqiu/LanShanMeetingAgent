@@ -9,6 +9,10 @@ import (
 )
 
 func CreateMeetingJSON(text string, meetingID string) error {
+	// 获取该会议ID的锁并加写锁
+	lock := GetFileLockManager().GetLock(meetingID)
+	lock.Lock()
+	defer lock.Unlock()
 
 	// 创建会议结构
 	meeting := models.SummarizedMeeting{

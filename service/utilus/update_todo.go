@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-// UpdateMeetingSummaryText 更新指定会议摘要的文本内容
-func UpdateMeetingSummaryText(meetingID string, newText string) error {
+// UpdateMeetingActionItemByID 根据TodoID更新指定会议的某个待办事项
+func UpdateMeetingActionItemByID(meetingID string, todoID string, updatedItem models.ActionItem) error {
 	// 获取该会议ID的锁并加写锁
 	lock := GetFileLockManager().GetLock(meetingID)
 	lock.Lock()
@@ -30,8 +30,21 @@ func UpdateMeetingSummaryText(meetingID string, newText string) error {
 		return fmt.Errorf("解析会议摘要数据失败: %v", err)
 	}
 
-	// 更新文本内容
-	meeting.Summary.Text = newText
+	// 查找并更新指定TodoID的待办事项
+	found := false
+	for i, item := range meeting.Summary.ActionItems {
+		if item.TodoID == todoID {
+			// 保留原TodoID
+			updatedItem.TodoID = todoID
+			meeting.Summary.ActionItems[i] = updatedItem
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("未找到ID为%s的待办事项", todoID)
+	}
 
 	// 转换为JSON
 	jsonData, err := json.MarshalIndent(meeting, "", "  ")
