@@ -1,20 +1,37 @@
-package utilus
+package utils
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"meetingagent/models"
 	"os"
 	"path/filepath"
 )
 
-// UpdateMeetingActionItemByID 根据TodoID更新指定会议的某个待办事项
-func UpdateMeetingActionItemByID(meetingID string, todoID string, updatedItem models.ActionItem) error {
+// generateRandomID 生成指定长度的随机ID
+func generateRandomID(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+// AddMeetingActionItem 向指定会议的ActionItems列表中添加一个新的待办事项
+func AddMeetingActionItem(meetingID string, newItem models.ActionItem) error {
 	// 获取该会议ID的锁并加写锁
 	lock := GetFileLockManager().GetLock(meetingID)
 	lock.Lock()
 	defer lock.Unlock()
 
+	// 生成随机TodoID
+	todoID, err := generateRandomID(8)
+	if err != nil {
+		return fmt.Errorf("生成TodoID失败: %v", err)
+	}
+	newItem.TodoID = todoID
 	// 构建文件路径
 	filePath := filepath.Join("data", "meetings", meetingID+".json")
 
@@ -30,21 +47,8 @@ func UpdateMeetingActionItemByID(meetingID string, todoID string, updatedItem mo
 		return fmt.Errorf("解析会议摘要数据失败: %v", err)
 	}
 
-	// 查找并更新指定TodoID的待办事项
-	found := false
-	for i, item := range meeting.Summary.ActionItems {
-		if item.TodoID == todoID {
-			// 保留原TodoID
-			updatedItem.TodoID = todoID
-			meeting.Summary.ActionItems[i] = updatedItem
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("未找到ID为%s的待办事项", todoID)
-	}
+	// 添加���的ActionItem
+	meeting.Summary.ActionItems = append(meeting.Summary.ActionItems, newItem)
 
 	// 转换为JSON
 	jsonData, err := json.MarshalIndent(meeting, "", "  ")

@@ -7,7 +7,7 @@ import (
 	"github.com/cloudwego/eino/components/tool/utils"
 	"github.com/cloudwego/eino/schema"
 	"meetingagent/models"
-	"meetingagent/service/utilus"
+	utils1 "meetingagent/service/utils"
 )
 
 type createTodoReq struct {
@@ -86,7 +86,7 @@ func UpdateTodo() tool.InvokableTool {
 				Deadline: input.Deadline,
 			}
 			fmt.Println("更新的todo：", mid)
-			err = utilus.UpdateMeetingActionItemByID(input.MeetingID, input.TodoID, mid)
+			err = utils1.UpdateMeetingActionItemByID(input.MeetingID, input.TodoID, mid)
 			if err != nil {
 				println("更新todo失败：", err)
 			}
@@ -142,7 +142,7 @@ func CreateTodo() tool.InvokableTool {
 				Deadline: input.Deadline,
 			}
 			fmt.Println("创建的todo：", mid)
-			err = utilus.AddMeetingActionItem(input.MeetingID, mid)
+			err = utils1.AddMeetingActionItem(input.MeetingID, mid)
 			if err != nil {
 				println("添加todo失败：", err)
 			}

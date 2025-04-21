@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"meetingagent/service/task"
-	"meetingagent/service/utilus"
+	"meetingagent/service/utils"
 )
 
 func SummaryMeeting(meetingID string) {
-	meeting, err := utilus.GetMeetingStore().GetMeeting(meetingID)
+	meeting, err := utils.GetMeetingStore().GetMeeting(meetingID)
 	if err != nil {
 		fmt.Println("获取会议记录失败:", err)
 		return
@@ -82,11 +82,11 @@ func SummaryMeeting(meetingID string) {
 			if err != nil {
 				fmt.Println("调用模型失败:", err)
 			}
-			err = utilus.CreateMeetingJSON(output.Content, meetingID)
+			err = utils.CreateMeetingJSON(output.Content, meetingID)
 			if err != nil {
 				fmt.Println("创建会议摘要失败:", err)
 			}
-			todos, err := utilus.ReadMeetingActionItems(meetingID)
+			todos, err := utils.ReadMeetingActionItems(meetingID)
 			if err != nil {
 				fmt.Println("读取会议待办事项失败:", err)
 			}
@@ -109,7 +109,7 @@ func SummaryMeeting(meetingID string) {
 			continue
 		}
 		go func() {
-			todos, err := utilus.ReadMeetingActionItems(meetingID)
+			todos, err := utils.ReadMeetingActionItems(meetingID)
 			if err != nil {
 				fmt.Println("读取会议待办事项失败:", err)
 			}
@@ -128,7 +128,7 @@ func SummaryMeeting(meetingID string) {
 			}
 			println("todo模型返回:", output.Content)
 		}()
-		thisTexts.summarized_text, err = utilus.ReadMeetingSummaryText(meetingID)
+		thisTexts.summarized_text, err = utils.ReadMeetingSummaryText(meetingID)
 		if err != nil {
 			fmt.Println("读取会议摘要失败:", err)
 		}
@@ -136,7 +136,7 @@ func SummaryMeeting(meetingID string) {
 		if err != nil {
 			fmt.Println("调用模型失败:", err)
 		}
-		err = utilus.UpdateMeetingSummaryText(meetingID, output.Content)
+		err = utils.UpdateMeetingSummaryText(meetingID, output.Content)
 		if err != nil {
 			fmt.Println("更新会议摘要失败:", err)
 		}

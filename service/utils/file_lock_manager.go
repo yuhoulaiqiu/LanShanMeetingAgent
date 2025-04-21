@@ -1,4 +1,4 @@
-package utilus
+package utils
 
 import (
 	"sync"
