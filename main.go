@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"meetingagent/config"
+	"meetingagent/dao"
 	"time"
 
 	"meetingagent/handlers"
@@ -13,7 +14,7 @@ import (
 )
 
 func main() {
-
+	dao.InitVkdb()
 	config.LoadConfig()
 	h := server.Default()
 	h.Use(Logger())

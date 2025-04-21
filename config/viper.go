@@ -13,8 +13,11 @@ type Config struct {
 		Temperature float32 `mapstructure:"temperature"`
 	} `mapstructure:"model_info"`
 	VKDB struct {
-		AccessKey       string `mapstructure:"access_key"`
-		SecretAccessKey string `mapstructure:"secret_access_key"`
+		Ak     string `mapstructure:"ak"`
+		Sk     string `mapstructure:"sk"`
+		Region string `mapstructure:"region"`
+		Host   string `mapstructure:"host"`
+		Scheme string `mapstructure:"scheme"`
 	} `mapstructure:"vkdb"`
 }
 
