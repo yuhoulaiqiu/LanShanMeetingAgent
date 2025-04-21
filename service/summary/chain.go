@@ -32,7 +32,7 @@ func InitChain() {
 		SecretKey: config.Cfg.VKDB.Sk,
 
 		// 模型配置
-		Model: "deepseek-v3-250324", // 模型端点 ID
+		Model: config.Cfg.ModelInfo.ModelName, // 模型端点 ID
 
 	})
 	if err != nil {
