@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hertz-contrib/sse"
+	"io"
+	"log"
+	"meetingagent/service/chat"
 	"meetingagent/service/summary"
 	"os"
 	"path/filepath"
@@ -15,7 +19,6 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
-	"github.com/hertz-contrib/sse"
 )
 
 // CreateMeeting handles the creation of a new meeting
@@ -156,43 +159,66 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 
 	// Create SSE stream
 	stream := sse.NewStream(c)
+	streamResult, err := chat.App.Stream(ctx, message)
+	if err != nil {
+		errorEvent := &sse.Event{
+			Data: []byte(fmt.Sprintf(`{"error":"获取AI回复失败: %v"}`, err)),
+		}
+		stream.Publish(errorEvent)
+		return
+	}
+	// 发送保持连接消息
+	keepAliveEvent := &sse.Event{
+		Event: "keep-alive",
+		Data:  []byte(`{"status":"开始接收AI回复"}`),
+	}
+	stream.Publish(keepAliveEvent)
 
-	// TODO: Implement actual chat logic
-	// This is a simple example that sends a message every second
-	ticker := time.NewTicker(time.Millisecond * 100)
-	stopChan := make(chan struct{})
-	go func() {
-		time.AfterFunc(time.Second, func() {
-			ticker.Stop()
-			close(stopChan)
-		})
-	}()
+	defer streamResult.Close()
 
-	msg := fmt.Sprintf("Fake sample chat message: %s\n", time.Now().Format(time.RFC3339))
-
+	i := 0
 	for {
-		select {
-		case <-ticker.C:
-			res := models.ChatMessage{
-				Data: msg,
-			}
-
-			data, err := json.Marshal(res)
-			if err != nil {
-				return
-			}
-
-			event := &sse.Event{
-				Data: data,
-			}
-
-			if err := stream.Publish(event); err != nil {
-				return
-			}
-		case <-stopChan:
-			return
-		case <-ctx.Done():
+		message, err := streamResult.Recv()
+		if err == io.EOF { // 流式输出结束
 			return
 		}
+		if err != nil {
+			log.Fatalf("recv failed: %v", err)
+		}
+		//log.Printf("message[%d]: %+v\n", i, message)
+		log.Println("message:", message.Content)
+		event := &sse.Event{
+			Data:  []byte(message.Content),
+			Event: "ai",
+		}
+		stream.Publish(event)
+		i++
 	}
+	// 处理流式输出并推送 SSE 消息
+	//for {
+	//	msg, err := streamResult.Recv()
+	//	println("msg:", msg.Content)
+	//	if err == io.EOF { // 流式输出结束
+	//		// 关闭流后发送结束标识
+	//		endEvent := &sse.Event{
+	//			Event: "close",
+	//			Data:  []byte(`{"status":"流式输出结束"}`),
+	//		}
+	//		stream.Publish(endEvent)
+	//		return
+	//	}
+	//	if err != nil {
+	//		errorEvent := &sse.Event{
+	//			Data: []byte(fmt.Sprintf(`{"error":"接收消息失败: %v"}`, err)),
+	//		}
+	//		stream.Publish(errorEvent)
+	//		return
+	//	}
+	//	// 将每个流式消息发布为 SSE 消息
+	//	event := &sse.Event{
+	//		Data: []byte(msg.Content),
+	//	}
+	//	stream.Publish(event)
+	//}
+
 }

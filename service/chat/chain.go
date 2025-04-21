@@ -46,11 +46,11 @@ func InitChain() {
 	agentLamda, _ := compose.AnyLambda(agent.Generate, agent.Stream, nil, nil)
 	template := NewChatTemplate()
 	loadMemoryLamda := InitLoadMemory()
-	load := LoadText()
+	loadTime := LoadText()
 	ChatChain = compose.NewChain[string, *schema.Message]()
 	ChatChain.
 		AppendLambda(loadMemoryLamda).
-		AppendLambda(load).
+		AppendLambda(loadTime).
 		AppendChatTemplate(template).
 		AppendLambda(agentLamda)
 

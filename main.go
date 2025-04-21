@@ -4,6 +4,7 @@ import (
 	"context"
 	"meetingagent/config"
 	"meetingagent/dao"
+	"meetingagent/service/chat"
 	"meetingagent/service/summary"
 	"meetingagent/service/task"
 	"time"
@@ -19,8 +20,11 @@ func main() {
 
 	config.LoadConfig()
 	dao.InitVkdb()
+	dao.InitSqlite()
+	dao.InitChromemDB()
 	summary.InitChain()
 	task.InitTodoChain()
+	chat.InitChain()
 	h := server.Default()
 	h.Use(Logger())
 

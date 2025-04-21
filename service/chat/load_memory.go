@@ -20,7 +20,7 @@ func InitLoadMemory() *compose.Lambda {
 			nil,
 		))
 		if err != nil {
-			log.Fatal("fail to get memory")
+			log.Fatal("fail to get memory", err)
 		}
 		count := collection.Count()
 		var nResult int
@@ -28,14 +28,14 @@ func InitLoadMemory() *compose.Lambda {
 			nResult = 10
 		} else {
 			if count == 0 {
-				nResult = 1
+				nResult = 0
 			} else {
 				nResult = count
 			}
 		}
 		result, err := collection.Query(ctx, input, nResult, nil, nil)
 		if err != nil {
-			log.Fatal("fail to get memory")
+			log.Println("fail to get memory", err)
 		}
 		memories := ""
 		for i, item := range result {
@@ -60,7 +60,7 @@ func InitLoadMemory() *compose.Lambda {
 			var role, content, timestamp string
 			err := rows.Scan(&role, &content, &timestamp)
 			if err != nil {
-				log.Fatal(err)
+				log.Println("fail to scan", err)
 			}
 			var msg *schema.Message
 			if role == "user" {

@@ -129,6 +129,7 @@ func SummaryMeeting(meetingID string) {
 			println("todo模型返回:", output.Content)
 		}()
 		thisTexts.summarized_text, err = utils.ReadMeetingSummaryText(meetingID)
+
 		if err != nil {
 			fmt.Println("读取会议摘要失败:", err)
 		}

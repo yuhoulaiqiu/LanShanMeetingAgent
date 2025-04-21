@@ -10,7 +10,8 @@ func NewChatTemplate() *prompt.DefaultChatTemplate {
 		schema.SystemMessage("你是一个智能助手，根据会议摘要，回答用户问题"),
 		schema.SystemMessage("现在的时间是: {current_time}"),
 		schema.SystemMessage("从向量数据库中获取的相关上下文: {context}"),
-		schema.UserMessage("需要你回答的问题: {question}"),
+		schema.MessagesPlaceholder("chat_history", true),
+		schema.UserMessage("提问: {question}"),
 	)
 	return template
 }
