@@ -45,6 +45,10 @@ func InitChain() {
 	tools = append(tools, updateTodoTool)
 	tools = append(tools, deleteTodoTool)
 	tools = append(tools, createTodoTool)
+
+	mcpTools := config.GetEinoTools()
+	tools = append(tools, mcpTools...)
+
 	toolsConfig := compose.ToolsNodeConfig{Tools: tools}
 	var agent *react.Agent
 	agent, err = react.NewAgent(Ctx, &react.AgentConfig{

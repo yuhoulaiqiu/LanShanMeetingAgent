@@ -19,6 +19,7 @@ import (
 func main() {
 
 	config.LoadConfig()
+	config.LoadMCPJson()
 	dao.InitVkdb()
 	dao.InitSqlite()
 	dao.InitChromemDB()
