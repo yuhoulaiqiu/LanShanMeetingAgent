@@ -44,8 +44,10 @@ func InitTodoChain() {
 	tools := []tool.BaseTool{}
 	createTodoTool := CreateTodo()
 	updateTodoTool := UpdateTodo()
+	deleteTodoTool := DeleteTodo()
 	tools = append(tools, createTodoTool)
 	tools = append(tools, updateTodoTool)
+	tools = append(tools, deleteTodoTool)
 	toolsConfig := compose.ToolsNodeConfig{
 		Tools: tools,
 	}

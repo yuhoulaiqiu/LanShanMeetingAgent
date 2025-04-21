@@ -9,10 +9,11 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"log"
 	"meetingagent/config"
+	"meetingagent/service/task"
 )
 
-var App compose.Runnable[string, *schema.Message]
-var ChatChain *compose.Chain[string, *schema.Message]
+var App compose.Runnable[map[string]any, *schema.Message]
+var ChatChain *compose.Chain[map[string]any, *schema.Message]
 var Ctx context.Context
 
 func InitChain() {
@@ -34,9 +35,16 @@ func InitChain() {
 		log.Println("创建模型失败:", err)
 		return
 	}
-	memorytool := GetSaveMemoryTool()
+
 	tools := []tool.BaseTool{}
-	tools = append(tools, memorytool)
+	getAllTodosTool := task.GetAllTodo()
+	updateTodoTool := task.UpdateTodo()
+	deleteTodoTool := task.DeleteTodo()
+	createTodoTool := task.CreateTodo()
+	tools = append(tools, getAllTodosTool)
+	tools = append(tools, updateTodoTool)
+	tools = append(tools, deleteTodoTool)
+	tools = append(tools, createTodoTool)
 	toolsConfig := compose.ToolsNodeConfig{Tools: tools}
 	var agent *react.Agent
 	agent, err = react.NewAgent(Ctx, &react.AgentConfig{
@@ -47,7 +55,7 @@ func InitChain() {
 	template := NewChatTemplate()
 	loadMemoryLamda := InitLoadMemory()
 	loadTime := LoadText()
-	ChatChain = compose.NewChain[string, *schema.Message]()
+	ChatChain = compose.NewChain[map[string]any, *schema.Message]()
 	ChatChain.
 		AppendLambda(loadMemoryLamda).
 		AppendLambda(loadTime).
@@ -60,8 +68,4 @@ func InitChain() {
 	} else {
 		log.Println("创建Chain成功")
 	}
-}
-
-func Stream(input string) (*schema.StreamReader[*schema.Message], error) {
-	return App.Stream(Ctx, input)
 }

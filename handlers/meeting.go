@@ -161,7 +161,10 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 
 	// Create SSE stream
 	stream := sse.NewStream(c)
-	streamResult, err := chat.App.Stream(ctx, message)
+	input := make(map[string]any)
+	input["meeting_id"] = meetingID
+	input["question"] = message
+	streamResult, err := chat.App.Stream(ctx, input)
 	if err != nil {
 		errorEvent := &sse.Event{
 			Data: []byte(fmt.Sprintf(`{"error":"获取AI回复失败: %v"}`, err)),

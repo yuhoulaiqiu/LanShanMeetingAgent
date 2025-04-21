@@ -12,7 +12,9 @@ import (
 )
 
 func InitLoadMemory() *compose.Lambda {
-	return compose.InvokableLambda(func(ctx context.Context, input string) (map[string]any, error) {
+	return compose.InvokableLambda(func(ctx context.Context, input map[string]any) (map[string]any, error) {
+		question := input["question"].(string)
+		meetingID := input["meeting_id"].(string)
 		collection, err := dao.ChromemDB.GetOrCreateCollection("rag", nil, chromem.NewEmbeddingFuncOpenAICompat(
 			"https://ark.cn-beijing.volces.com/api/v3",
 			config.Cfg.ModelInfo.ApiKey,
@@ -33,7 +35,8 @@ func InitLoadMemory() *compose.Lambda {
 				nResult = count
 			}
 		}
-		result, err := collection.Query(ctx, input, nResult, nil, nil)
+		where := map[string]string{"source_meeting_id": meetingID}
+		result, err := collection.Query(ctx, question, nResult, where, nil)
 		if err != nil {
 			log.Println("fail to get memory", err)
 		}
@@ -79,9 +82,10 @@ func InitLoadMemory() *compose.Lambda {
 		output := map[string]any{
 			"context":      memories,
 			"chat_history": chatHistory,
-			"question":     input,
+			"question":     question,
+			"meeting_id":   meetingID,
 		}
-		go InsertMessage(dao.SqliteDB, "user", input)
+		go InsertMessage(dao.SqliteDB, "user", question)
 		return output, nil
 	})
 }

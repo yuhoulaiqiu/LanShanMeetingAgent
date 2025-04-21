@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -35,6 +36,81 @@ type UpdateTodoResp struct {
 	Status string `json:"status" jsonschema:"description=操作状态"`
 }
 
+type GetAllTodoReq struct {
+	MeetingID string `json:"meeting_id" jsonschema:"description=会议ID"`
+}
+type GetAllTodoResp struct {
+	TodoList string `json:"todo_list" jsonschema:"description=todo列表"`
+}
+type DeleteTodoReq struct {
+	TodoID    string `json:"todo_id" jsonschema:"description=任务ID"`
+	MeetingID string `json:"meeting_id" jsonschema:"description=会议ID"`
+}
+type DeleteTodoResp struct {
+	Status string `json:"status" jsonschema:"description=操作状态"`
+}
+
+func DeleteTodo() tool.InvokableTool {
+	updateTodoTool := utils.NewTool(
+		&schema.ToolInfo{
+			Name: "delete_todo",
+			Desc: "删除一条todo",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"todo_id": {
+					Type:     schema.String,
+					Desc:     "任务ID",
+					Required: true,
+				},
+				"meeting_id": {
+					Type:     schema.String,
+					Desc:     "会议ID",
+					Required: true,
+				},
+			}),
+		}, func(ctx context.Context, input *DeleteTodoReq) (output DeleteTodoResp, err error) {
+			err = utils1.DeleteMeetingActionItem(input.MeetingID, input.TodoID)
+			if err != nil {
+				println("删除todo失败：", err)
+				output.Status = "删除todo失败"
+				return output, err
+			}
+			output.Status = "删除todo成功"
+			fmt.Println("删除的todo：", input.TodoID)
+			return output, nil
+		},
+	)
+	return updateTodoTool
+}
+func GetAllTodo() tool.InvokableTool {
+	updateTodoTool := utils.NewTool(
+		&schema.ToolInfo{
+			Name: "get_all_todo",
+			Desc: "获取所有的todo",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"meeting_id": {
+					Type:     schema.String,
+					Desc:     "会议ID",
+					Required: true,
+				},
+			}),
+		}, func(ctx context.Context, input *GetAllTodoReq) (output GetAllTodoResp, err error) {
+			meetingID := input.MeetingID
+			todos, err := utils1.ReadMeetingActionItems(meetingID)
+			if err != nil {
+				fmt.Println("读取会议待办事项失败:", err)
+			}
+			jsonBytes, err := json.Marshal(todos)
+			if err != nil {
+				fmt.Errorf("序列化结构体失败: %v", err)
+			}
+			todoString := string(jsonBytes)
+			output.TodoList = todoString
+			return output, nil
+		},
+	)
+	return updateTodoTool
+}
+
 func UpdateTodo() tool.InvokableTool {
 	updateTodoTool := utils.NewTool(
 		&schema.ToolInfo{
@@ -64,7 +140,7 @@ func UpdateTodo() tool.InvokableTool {
 				"level": {
 					Type:     schema.String,
 					Desc:     "任务的优先级",
-					Required: false,
+					Required: true,
 				},
 				"state": {
 					Type:     schema.String,
@@ -74,7 +150,7 @@ func UpdateTodo() tool.InvokableTool {
 				"deadline": {
 					Type:     schema.String,
 					Desc:     "任务的截止日期",
-					Required: false,
+					Required: true,
 				},
 			}),
 		}, func(ctx context.Context, input *UpdateTodoReq) (output UpdateTodoResp, err error) {

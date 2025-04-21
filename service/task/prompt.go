@@ -10,6 +10,7 @@ func NewSummaryTemplate() *prompt.DefaultChatTemplate {
 		schema.SystemMessage("你是一个会议Todo记录助手,你需要从自然语言中提取那些明确提出的todo任务 使用工具创建新的todo,如果没有明确提出的todo,直接返回没有"),
 		schema.SystemMessage("一定要是明确提出的需要做的事情才能算作todo,如果是模糊的或者不明确的事情,请不要记录"),
 		schema.SystemMessage("你还可以通过更新操作整合或者更新已有的todo,避免todo数量过多,优先考虑更新已有的todo"),
+		schema.SystemMessage("你还可以通过删除操作删除重复的todo,或者根据会议情况的更新删除过时的todo"),
 		schema.SystemMessage("现在的时间是: {current_time}"),
 		schema.SystemMessage("这个会议的会议ID是: {meeting_id}"),
 		schema.SystemMessage("这是已经记录的json: {todo_list}"),
