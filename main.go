@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
-	dao.InitVkdb()
 	config.LoadConfig()
+	dao.InitVkdb()
 	h := server.Default()
 	h.Use(Logger())
 
