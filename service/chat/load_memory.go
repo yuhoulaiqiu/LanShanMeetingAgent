@@ -13,7 +13,7 @@ import (
 
 func InitLoadMemory() *compose.Lambda {
 	return compose.InvokableLambda(func(ctx context.Context, input string) (map[string]any, error) {
-		collection, err := dao.ChromemDB.GetOrCreateCollection("memory", nil, chromem.NewEmbeddingFuncOpenAICompat(
+		collection, err := dao.ChromemDB.GetOrCreateCollection("rag", nil, chromem.NewEmbeddingFuncOpenAICompat(
 			"https://ark.cn-beijing.volces.com/api/v3",
 			config.Cfg.ModelInfo.ApiKey,
 			"doubao-embedding-large-text-240915",
@@ -77,9 +77,9 @@ func InitLoadMemory() *compose.Lambda {
 			log.Print("转换的过程有误", err)
 		}
 		output := map[string]any{
-			"long_term_memory": memories,
-			"chat_history":     chatHistory,
-			"question":         input,
+			"context":      memories,
+			"chat_history": chatHistory,
+			"question":     input,
 		}
 		go InsertMessage(dao.SqliteDB, "user", input)
 		return output, nil
