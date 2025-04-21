@@ -153,9 +153,11 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 	fmt.Printf("meetingID: %s, sessionID: %s, message: %s\n", meetingID, sessionID, message)
 
 	// Set SSE headers
+	c.SetContentType("text/event-stream; charset=utf-8")
 	c.Response.Header.Set("Content-Type", "text/event-stream")
 	c.Response.Header.Set("Cache-Control", "no-cache")
 	c.Response.Header.Set("Connection", "keep-alive")
+	c.Response.Header.Set("Access-Control-Allow-Origin", "*")
 
 	// Create SSE stream
 	stream := sse.NewStream(c)
@@ -167,12 +169,6 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 		stream.Publish(errorEvent)
 		return
 	}
-	// 发送保持连接消息
-	keepAliveEvent := &sse.Event{
-		Event: "keep-alive",
-		Data:  []byte(`{"status":"开始接收AI回复"}`),
-	}
-	stream.Publish(keepAliveEvent)
 
 	defer streamResult.Close()
 
@@ -180,6 +176,11 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 	for {
 		message, err := streamResult.Recv()
 		if err == io.EOF { // 流式输出结束
+			event := &sse.Event{
+				Event: "stop",
+				Data:  []byte("stream finished"),
+			}
+			err = stream.Publish(event)
 			return
 		}
 		if err != nil {
@@ -187,38 +188,16 @@ func HandleChat(ctx context.Context, c *app.RequestContext) {
 		}
 		//log.Printf("message[%d]: %+v\n", i, message)
 		log.Println("message:", message.Content)
+
 		event := &sse.Event{
+			Event: "message",
 			Data:  []byte(message.Content),
-			Event: "ai",
 		}
-		stream.Publish(event)
+		err = stream.Publish(event)
+		if err != nil {
+			log.Printf("publish failed: %v", err)
+		}
 		i++
 	}
-	// 处理流式输出并推送 SSE 消息
-	//for {
-	//	msg, err := streamResult.Recv()
-	//	println("msg:", msg.Content)
-	//	if err == io.EOF { // 流式输出结束
-	//		// 关闭流后发送结束标识
-	//		endEvent := &sse.Event{
-	//			Event: "close",
-	//			Data:  []byte(`{"status":"流式输出结束"}`),
-	//		}
-	//		stream.Publish(endEvent)
-	//		return
-	//	}
-	//	if err != nil {
-	//		errorEvent := &sse.Event{
-	//			Data: []byte(fmt.Sprintf(`{"error":"接收消息失败: %v"}`, err)),
-	//		}
-	//		stream.Publish(errorEvent)
-	//		return
-	//	}
-	//	// 将每个流式消息发布为 SSE 消息
-	//	event := &sse.Event{
-	//		Data: []byte(msg.Content),
-	//	}
-	//	stream.Publish(event)
-	//}
 
 }

@@ -4,6 +4,7 @@ let currentSessionId = null;
 let currentMeetingContent = null;
 let jsonEditor = null;
 let summaryJsonEditor = null;
+let currentEventSource = null; // 添加全局变量跟踪当前的EventSource
 
 // DOM Elements
 const meetingList = document.getElementById('meetingList');
@@ -269,6 +270,12 @@ async function sendMessage() {
   const message = chatInput.value.trim();
   if (!message || !currentMeetingId || !currentSessionId) return;
 
+  // 如果存在之前的连接，先关闭它
+  if (currentEventSource) {
+    currentEventSource.close();
+    currentEventSource = null;
+  }
+
   // Add user message to chat
   const userMsgID = Math.random().toString(36).substring(2, 15);
   addMessageToChat(userMsgID, message, 'user');
@@ -276,16 +283,50 @@ async function sendMessage() {
 
   // Start SSE connection and send message
   const eventSource = new EventSource(`/chat?meeting_id=${currentMeetingId}&session_id=${currentSessionId}&message=${encodeURIComponent(message)}`);
+  currentEventSource = eventSource; // 保存当前连接的引用
   const assistantMsgID = Math.random().toString(36).substring(2, 15);
+  let messageReceived = false; // 标记是否接收到至少一条消息
 
-  eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-     // you can change this to your data structure
-    addMessageToChat(assistantMsgID, data.data, 'assistant');
-  };
+  eventSource.addEventListener('message', (event) => {
+    try {
+      messageReceived = true;
+      let content = event.data;
+      try {
+        const jsonData = JSON.parse(event.data);
+        if (jsonData.data) {
+          content = jsonData.data;
+        } else if (jsonData.error) {
+          content = `错误: ${jsonData.error}`;
+        }
+      } catch (e) {
+        console.log("使用原始文本内容");
+      }
+      addMessageToChat(assistantMsgID, content, 'assistant');
+    } catch (error) {
+      console.error("处理消息时出错:", error);
+    }
+  });
 
-  eventSource.onerror = () => {
+  eventSource.addEventListener('stop', (event) => {
+    console.log("收到停止事件:", event);
     eventSource.close();
+    currentEventSource = null; // 清除引用
+    console.log("SSE 连接已结束");
+  });
+
+  eventSource.onerror = (error) => {
+    console.error("SSE连接错误:", error);
+    // 检查连接状态：0=连接中, 1=打开, 2=关闭
+    if (eventSource.readyState === 2) {
+      console.log("连接已关闭");
+      eventSource.close();
+      currentEventSource = null; // 清除引用
+      
+      // 如果连接关闭但没有收到任何消息，显示错误提示
+      if (!messageReceived) {
+        addMessageToChat(assistantMsgID, "与服务器的连接已断开", 'assistant');
+      }
+    }
   };
 }
 
@@ -307,4 +348,4 @@ function addMessageToChat(msgID, message, type) {
 
 // Initialize
 loadMeetings();
-loadURLState(); 
+loadURLState();
