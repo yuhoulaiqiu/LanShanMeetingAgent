@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/philippgille/chromem-go"
 	"log"
+	"meetingagent/config"
 	"meetingagent/dao"
 	"meetingagent/service/utils"
 )
@@ -39,7 +40,12 @@ func Split(meetingID string) error {
 		log.Println(err)
 		return err
 	}
-	collection, err := dao.ChromemDB.GetOrCreateCollection("rag", nil, nil)
+	collection, err := dao.ChromemDB.GetOrCreateCollection("rag", nil, chromem.NewEmbeddingFuncOpenAICompat(
+		"https://ark.cn-beijing.volces.com/api/v3",
+		config.Cfg.ModelInfo.ApiKey,
+		"doubao-embedding-large-text-240915",
+		nil,
+	))
 	for i, v := range res {
 		fmt.Println("片段", i+1, ":", v.Content)
 		doc1 := chromem.Document{
