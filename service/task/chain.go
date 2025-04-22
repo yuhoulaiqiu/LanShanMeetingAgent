@@ -34,7 +34,7 @@ func InitTodoChain() {
 		SecretKey: config.Cfg.VKDB.Sk,
 
 		// 模型配置
-		Model: config.Cfg.ModelInfo.Model2Name, // 模型端点 ID
+		Model: config.Cfg.ModelInfo.ModelName, // 模型端点 ID
 
 	})
 	if err != nil {

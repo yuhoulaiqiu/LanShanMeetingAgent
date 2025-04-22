@@ -8,7 +8,6 @@ import (
 type Config struct {
 	ModelInfo struct {
 		ModelName   string  `mapstructure:"model_name"`
-		Model2Name  string  `mapstructure:"model2_name"`
 		BaseUrl     string  `mapstructure:"base_url"`
 		ApiKey      string  `mapstructure:"api_key"`
 		Temperature float32 `mapstructure:"temperature"`
